@@ -6,6 +6,12 @@ var should = require('should');
 require('mocha');
 
 describe('gulp tasks', function() {
+  beforeEach(function () {
+    gulp.reset();
+  });
+  afterEach(function () {
+    gulp.reset();
+  });
   describe('task()', function() {
     it('should define a task', function(done) {
       var fn;
@@ -13,47 +19,48 @@ describe('gulp tasks', function() {
       gulp.task('test', fn);
       should.exist(gulp.tasks.test);
       gulp.tasks.test.fn.should.equal(fn);
-      gulp.reset();
       done();
     });
   });
-  describe('run()', function() {
+  describe('runParallel()', function() {
     it('should run multiple tasks', function(done) {
       var a, fn, fn2;
       a = 0;
-      fn = function() {
-        this.should.equal(gulp);
+      fn = function(cb) {
         ++a;
+        cb(null);
       };
-      fn2 = function() {
-        this.should.equal(gulp);
+      fn2 = function(cb) {
         ++a;
+        cb(null);
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.run('test', 'test2');
-      a.should.equal(2);
-      gulp.reset();
-      done();
+      gulp.runParallel('test', 'test2', function (err/*, stats*/) {
+        a.should.equal(2);
+        should.not.exist(err);
+        done();
+      });
     });
-    it('should run all tasks when call run() multiple times', function(done) {
-      var a, fn, fn2;
+    it('should run all tasks when call runParallel() multiple times', function(done) {
+      var a, fn, fn2, timeout = 20;
       a = 0;
-      fn = function() {
-        this.should.equal(gulp);
+      fn = function(cb) {
         ++a;
+        cb(null);
       };
-      fn2 = function() {
-        this.should.equal(gulp);
+      fn2 = function(cb) {
         ++a;
+        cb(null);
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.run('test');
-      gulp.run('test2');
-      a.should.equal(2);
-      gulp.reset();
-      done();
+      gulp.runParallel('test');
+      gulp.runParallel('test2');
+      setTimeout(function () {
+        a.should.equal(2);
+        done();
+      }, timeout);
     });
     it('should run all async promise tasks', function(done) {
       var a, fn, fn2;
@@ -76,14 +83,11 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.run('test');
-      gulp.run('test2', function() {
-        gulp.isRunning.should.equal(false);
+      gulp.runParallel('test'); // FRAGILE: ASSUME: test is done before test2
+      gulp.runParallel('test2', function() {
         a.should.equal(2);
-        gulp.reset();
         done();
       });
-      gulp.isRunning.should.equal(true);
     });
     it('should run all async callback tasks', function(done) {
       var a, fn, fn2;
@@ -102,56 +106,51 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.run('test');
-      gulp.run('test2', function() {
-        gulp.isRunning.should.equal(false);
+      gulp.runParallel('test'); // FRAGILE: ASSUME: test is done before test2
+      gulp.runParallel('test2', function() {
         a.should.equal(2);
-        gulp.reset();
         done();
       });
-      gulp.isRunning.should.equal(true);
     });
-    it('should emit task_not_found and throw an error when task is not defined', function(done) {
-      gulp.on('task_not_found', function(err) {
+    it('should return an error when task is not defined', function(done) {
+      var taskName = 'taskThatDoesntExist';
+      gulp.runParallel(taskName, function (err) {
         should.exist(err);
-        should.exist(err.task);
-        err.task.should.equal('test');
-        gulp.reset();
+        err.missingTasks.length.should.equal(1);
+        err.missingTasks[0].should.equal(taskName);
         done();
       });
-      try {
-        gulp.run('test');
-      } catch (err) {
-        should.exist(err);
-      }
     });
-    it('should run task scoped to gulp', function(done) {
-      var a, fn;
+    it('should run task scoped to a copy of the task', function(done) {
+      var a, fn, random = 'random val';
       a = 0;
-      fn = function() {
-        this.should.equal(gulp);
+      fn = function(cb) {
+        this.name.should.equal('test');
+        this.a.should.equal(random);
         ++a;
+        cb(null);
       };
-      gulp.task('test', fn);
-      gulp.run('test');
-      a.should.equal(1);
-      gulp.isRunning.should.equal(false);
-      gulp.reset();
-      done();
+      gulp.task('test', {a:random}, fn);
+      gulp.runParallel('test', function (err) {
+        a.should.equal(1);
+        should.not.exist(err);
+        done();
+      });
     });
-    it('should run default task scoped to gulp', function(done) {
+    it('should run default task scoped to copy of task', function(done) {
       var a, fn;
       a = 0;
-      fn = function() {
-        this.should.equal(gulp);
+      fn = function(cb) {
+        this.name.should.equal('default');
         ++a;
+        cb(null);
       };
       gulp.task('default', fn);
-      gulp.run();
-      a.should.equal(1);
-      gulp.isRunning.should.equal(false);
-      gulp.reset();
-      done();
+      gulp.runParallel(function (err) {
+        a.should.equal(1);
+        should.not.exist(err);
+        done();
+      });
     });
   });
 });

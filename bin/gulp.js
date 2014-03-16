@@ -96,24 +96,18 @@ function formatError(e) {
 
 // wire up logging events
 function logEvents(gulpInst) {
-  gulpInst.on('task_start', function(e) {
-    gutil.log('Starting', "'" + chalk.cyan(e.task) + "'...");
+  gulpInst.on('taskStart', function(e) {
+    gutil.log('Starting', "'" + chalk.cyan(e.name) + "'...");
   });
 
-  gulpInst.on('task_stop', function(e) {
+  gulpInst.on('taskEnd', function(e) {
     var time = prettyTime(e.hrDuration);
-    gutil.log('Finished', "'" + chalk.cyan(e.task) + "'", 'after', chalk.magenta(time));
+    gutil.log('Finished', "'" + chalk.cyan(e.name) + "'", 'after', chalk.magenta(time));
   });
 
-  gulpInst.on('task_err', function(e) {
+  gulpInst.on('taskErr', function(e) {
     var msg = formatError(e);
     var time = prettyTime(e.hrDuration);
-    gutil.log("'" + chalk.cyan(e.task) + "'", 'errored after', chalk.magenta(time), chalk.red(msg));
-  });
-
-  gulpInst.on('task_not_found', function(err) {
-    gutil.log(chalk.red("Task '" + err.task + "' was not defined in your gulpfile but you tried to run it."));
-    gutil.log('Please check the documentation for proper gulpfile formatting.');
-    process.exit(1);
+    gutil.log("'" + chalk.cyan(e.name) + "'", 'errored after', chalk.magenta(time), chalk.red(msg));
   });
 }

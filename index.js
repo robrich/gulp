@@ -11,15 +11,16 @@ function Gulp() {
 }
 util.inherits(Gulp, Orchestrator);
 
-Gulp.prototype.task = Gulp.prototype.add;
-Gulp.prototype.run = function() {
-  // run() is deprecated as of 3.5 and will be removed in 4.0
-  // use task dependencies instead
-
-  // impose our opinion of "default" tasks onto orchestrator
+// impose our opinion of "default" tasks onto orchestrator
+var orchestratorParallel = Gulp.prototype.parallel;
+var orchestratorSeries = Gulp.prototype.series;
+Gulp.prototype.parallel = function () {
   var tasks = arguments.length ? arguments : ['default'];
-
-  this.start.apply(this, tasks);
+  return orchestratorParallel.apply(this, tasks);
+};
+Gulp.prototype.series = function () {
+  var tasks = arguments.length ? arguments : ['default'];
+  return orchestratorSeries.apply(this, tasks);
 };
 
 Gulp.prototype.src = vfs.src;
@@ -33,7 +34,11 @@ Gulp.prototype.watch = function(glob, opt, fn) {
   // array of tasks given
   if (Array.isArray(fn)) {
     return vfs.watch(glob, opt, function() {
-      this.start.apply(this, fn);
+      this.run(this.parallel.apply(this, fn), {continueOnError:true}, function (err/*, stat*/) {
+        if (err) {
+          gutil.log(err); // show but don't blow up
+        }
+      });
     }.bind(this));
   }
 
@@ -45,7 +50,7 @@ Gulp.prototype.Gulp = Gulp;
 
 // deprecations
 deprecated.field('gulp.env has been deprecated. Use your own CLI parser instead. We recommend using yargs or minimist.', console.log, Gulp.prototype, 'env', gutil.env);
-Gulp.prototype.run = deprecated.method('gulp.run() has been deprecated. Use task dependencies or gulp.watch task triggering instead.', console.log, Gulp.prototype.run);
+Gulp.prototype.start = deprecated.method('gulp.start() has been deprecated. Use task dependencies or gulp.runParallel() or gulp.runSeries() instead.', console.log, Gulp.prototype.runParallel);
 
 var inst = new Gulp();
 module.exports = inst;

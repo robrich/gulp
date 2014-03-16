@@ -13,9 +13,24 @@ var outpath = path.join(__dirname, "./out-fixtures");
 
 describe('gulp', function() {
   describe('watch()', function() {
-    beforeEach(rimraf.bind(null, outpath));
-    beforeEach(mkdirp.bind(null, outpath));
-    afterEach(rimraf.bind(null, outpath));
+    beforeEach(function (done) {
+      gulp.reset();
+      rimraf(outpath, function () {
+        mkdirp(outpath, done);
+      });
+    });
+    afterEach(function (done) {
+      gulp.reset();
+      // hey windows, quit being a dork
+      rimraf(outpath, function () {
+        rimraf(outpath, function () {
+          rimraf(outpath, function () {
+            // swallow error
+            done();
+          });
+        });
+      });
+    });
 
     var tempFileContent = 'A test generated this file and it is safe to delete';
 
@@ -80,11 +95,13 @@ describe('gulp', function() {
 
       fs.writeFile(tempFile, tempFileContent, function() {
 
-        gulp.task(task1, function() {
+        gulp.task(task1, function(cb) {
           a++;
+          cb(null);
         });
-        gulp.task(task2, function() {
+        gulp.task(task2, function(cb) {
           a += 10;
+          cb(null);
         });
         gulp.task(task3, function() {
           throw new Error("task3 called!");
@@ -94,7 +111,6 @@ describe('gulp', function() {
         setTimeout(function() {
           a.should.equal(11); // task1 and task2
 
-          gulp.reset();
           watcher.end();
           done();
         }, timeout);

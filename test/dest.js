@@ -12,8 +12,28 @@ var outpath = join(__dirname, "./out-fixtures");
 
 describe('gulp output stream', function() {
   describe('dest()', function() {
-    beforeEach(rimraf.bind(null, outpath));
-    afterEach(rimraf.bind(null, outpath));
+    beforeEach(function (done) {
+      // hey windows, quit being a dork
+      rimraf(outpath, function () {
+        rimraf(outpath, function () {
+          rimraf(outpath, function () {
+            // swallow error
+            done();
+          });
+        });
+      });
+    });
+    afterEach(function (done) {
+      // hey windows, quit being a dork
+      rimraf(outpath, function () {
+        rimraf(outpath, function () {
+          rimraf(outpath, function () {
+            // swallow error
+            done();
+          });
+        });
+      });
+    });
 
     it('should return a stream', function(done) {
       var stream = gulp.dest(join(__dirname, "./fixtures/"));
