@@ -22,7 +22,7 @@ describe('gulp tasks', function() {
       done();
     });
   });
-  describe('runParallel()', function() {
+  describe('run(parallel())', function() {
     it('should run multiple tasks', function(done) {
       var a, fn, fn2;
       a = 0;
@@ -36,13 +36,13 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.runParallel('test', 'test2', function (err/*, stats*/) {
+      gulp.run(gulp.parallel('test', 'test2'), function (err/*, stats*/) {
         a.should.equal(2);
         should.not.exist(err);
         done();
       });
     });
-    it('should run all tasks when call runParallel() multiple times', function(done) {
+    it('should run all tasks when call run(parallel()) multiple times', function(done) {
       var a, fn, fn2, timeout = 20;
       a = 0;
       fn = function(cb) {
@@ -55,8 +55,8 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.runParallel('test');
-      gulp.runParallel('test2');
+      gulp.run(gulp.parallel('test'));
+      gulp.run(gulp.parallel('test2'));
       setTimeout(function () {
         a.should.equal(2);
         done();
@@ -83,8 +83,8 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.runParallel('test'); // FRAGILE: ASSUME: test is done before test2
-      gulp.runParallel('test2', function() {
+      gulp.run(gulp.parallel('test')); // FRAGILE: ASSUME: test is done before test2
+      gulp.run(gulp.parallel('test2'), function() {
         a.should.equal(2);
         done();
       });
@@ -106,15 +106,15 @@ describe('gulp tasks', function() {
       };
       gulp.task('test', fn);
       gulp.task('test2', fn2);
-      gulp.runParallel('test'); // FRAGILE: ASSUME: test is done before test2
-      gulp.runParallel('test2', function() {
+      gulp.run(gulp.parallel('test')); // FRAGILE: ASSUME: test is done before test2
+      gulp.run(gulp.parallel('test2'), function() {
         a.should.equal(2);
         done();
       });
     });
     it('should return an error when task is not defined', function(done) {
       var taskName = 'taskThatDoesntExist';
-      gulp.runParallel(taskName, function (err) {
+      gulp.run(gulp.parallel(taskName), function (err) {
         should.exist(err);
         err.missingTasks.length.should.equal(1);
         err.missingTasks[0].should.equal(taskName);
@@ -131,7 +131,7 @@ describe('gulp tasks', function() {
         cb(null);
       };
       gulp.task('test', {a:random}, fn);
-      gulp.runParallel('test', function (err) {
+      gulp.run(gulp.parallel('test'), function (err) {
         a.should.equal(1);
         should.not.exist(err);
         done();
@@ -146,7 +146,7 @@ describe('gulp tasks', function() {
         cb(null);
       };
       gulp.task('default', fn);
-      gulp.runParallel(function (err) {
+      gulp.run(gulp.parallel(), function (err) {
         a.should.equal(1);
         should.not.exist(err);
         done();
