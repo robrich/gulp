@@ -79,11 +79,20 @@ function handleArguments(env) {
 }
 
 function logTasks(gulpFile, localGulp) {
-  var tree = taskTree(localGulp.tasks);
+  var tree = localGulp.taskNames();
   tree.label = 'Tasks for ' + chalk.magenta(gulpFile);
-  archy(tree).split('\n').forEach(function(v) {
-    if (v.trim().length === 0) return;
-    gutil.log(v);
+  tree.forEach(function(name) {
+    var task = localGulp.task(name);
+    var str = name;
+    if (task) {
+      if (task.before && task.before.length) {
+        str += ' < '+task.before.join(' < ');
+      }
+      if (task.after && task.after.length) {
+        str += ' > '+task.after.join(' > ');
+      }
+    }
+    gutil.log(str);
   });
 }
 
