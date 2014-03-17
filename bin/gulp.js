@@ -74,7 +74,7 @@ function handleArguments(env) {
     if (tasksFlag) {
       return logTasks(gulpFile, gulpInst);
     }
-    gulpInst.start.apply(gulpInst, toRun);
+    gulpInst.run(gulpInst.parallel.apply(gulpInst, toRun));
   });
 }
 
